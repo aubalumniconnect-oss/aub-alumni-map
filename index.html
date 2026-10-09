@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAAAUB Global Alumni Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { width: 100vw; height: 100vh; }
+        .popup-box { text-align: center; }
+        .popup-box h3 { margin: 0 0 5px 0; color: #b30000; } /* AUB Red */
+        .btn-join {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 6px 12px;
+            background-color: #E1306C; /* Instagram Pink */
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Initialize map centered globally
+    const map = L.map('map').setView([25.0, 10.0], 2);
+
+    // Add clean open-source map tile
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // List of WAAAUB Chapters with Coordinates
+    const chapters = [
+        { name: "Dubai & Northern Emirates", lat: 25.2048, lng: 55.2708, handle: "@waaaub_dubai", url: "https://instagram.com/waaaub_dubai" },
+        { name: "Abu Dhabi", lat: 24.4539, lng: 54.3773, handle: "@waaaub_abudhabi", url: "https://instagram.com/waaaub_abudhabi" },
+        { name: "Riyadh", lat: 24.7136, lng: 46.6753, handle: "@waaaub_riyadh", url: "https://instagram.com/waaaub_riyadh" },
+        { name: "UK Chapter (London)", lat: 51.5074, lng: -0.1278, handle: "@waaaub_uk", url: "https://instagram.com/waaaub_uk" },
+        { name: "France Chapter (Paris)", lat: 48.8566, lng: 2.3522, handle: "@waaaub_france", url: "https://instagram.com/waaaub_france" },
+        { name: "New York Tri-State", lat: 40.7128, lng: -74.0060, handle: "@waaaub_nytristate", url: "https://instagram.com/waaaub_nytristate" },
+        { name: "Houston Chapter", lat: 29.7604, lng: -95.3698, handle: "@waaaub_houston", url: "https://instagram.com/waaaub_houston" },
+        { name: "SoCal Chapter (Los Angeles)", lat: 34.0522, lng: -118.2437, handle: "@waaaub_socal", url: "https://instagram.com/waaaub_socal" },
+        { name: "Toronto Chapter", lat: 43.6532, lng: -79.3832, handle: "@waaaub_toronto", url: "https://instagram.com/waaaub_toronto" },
+        { name: "Beirut / Main Campus", lat: 33.8987, lng: 35.4800, handle: "@aub_alumni", url: "https://instagram.com/aub_alumni" }
+    ];
+
+    // Add clickable markers
+    chapters.forEach(chap => {
+        const marker = L.marker([chap.lat, chap.lng]).addTo(map);
+        marker.bindPopup(`
+            <div class="popup-box">
+                <h3>WAAAUB ${chap.name}</h3>
+                <p>${chap.handle}</p>
+                <a href="${chap.url}" target="_blank" class="btn-join">Connect on Instagram</a>
+            </div>
+        `);
+    });
+</script>
+
+</body>
+</html>
