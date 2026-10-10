@@ -3,88 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AUB Global Alumni Chapter Map</title>
+    <title>WAAAUB Global Chapters Map | AUB Alumni</title>
+
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; }
-        #map { width: 100vw; height: 100vh; }
-        
-        /* AUB Crimson Theme */
-        .aub-popup h3 { color: #800000; margin: 0 0 4px 0; font-size: 16px; border-bottom: 2px solid #800000; padding-bottom: 4px; }
-        .aub-popup p { font-size: 13px; margin: 4px 0; color: #333; }
-        .aub-btn {
-            display: block;
-            margin-top: 6px;
-            padding: 6px 10px;
-            background-color: #800000;
-            color: #fff !important;
-            text-align: center;
-            text-decoration: none;
-            font-weight: bold;
-            border-radius: 4px;
-            font-size: 12px;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body, html { height: 100%; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; }
+
+        /* Top Header & Filter Bar */
+        #header-bar {
+            background-color: #800000; /* AUB Crimson Red */
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            position: relative;
         }
-        .aub-btn-alt { background-color: #3b5998; } /* Facebook color */
+
+        .title-container h1 { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
+        .title-container p { font-size: 12px; opacity: 0.9; }
+
+        .filter-container { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        .filter-container label { font-size: 13px; font-weight: bold; }
+        .filter-container select {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 13px;
+            font-weight: bold;
+            color: #800000;
+            cursor: pointer;
+            background-color: #fff;
+        }
+
+        #map { width: 100vw; height: calc(100vh - 60px); }
+
+        /* Popup Styling */
+        .aub-popup { padding: 4px; max-width: 260px; }
+        .aub-popup h3 { color: #800000; font-size: 15px; margin-bottom: 6px; border-bottom: 2px solid #800000; padding-bottom: 4px; }
+        .aub-popup p { font-size: 12px; color: #333; margin: 3px 0; }
+        .rep-info { background: #f8f9fa; border-left: 3px solid #800000; padding: 6px 8px; margin: 8px 0; border-radius: 2px; }
+
+        /* Social Icons Bar */
+        .social-links { display: flex; gap: 8px; margin-top: 10px; }
+        .social-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 7px 10px;
+            color: white !important;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-insta { background-color: #E1306C; }
+        .btn-fb { background-color: #1877F2; }
+        .btn-portal { background-color: #800000; }
     </style>
 </head>
 <body>
 
+<!-- Header Bar with Stats & Region Filter -->
+<div id="header-bar">
+    <div class="title-container">
+        <h1>WAAAUB Global Chapters Map 🌍</h1>
+        <p>Connecting 60+ Alumni Chapters Worldwide across 4 Regions</p>
+    </div>
+    <div class="filter-container">
+        <label for="regionFilter"><i class="fa-solid fa-filter"></i> Filter Region:</label>
+        <select id="regionFilter" onchange="filterChapters()">
+            <option value="ALL">Show All Regions (60+ Chapters)</option>
+            <option value="MENA">Middle East & North Africa (MENA)</option>
+            <option value="North America">North America</option>
+            <option value="Europe">Europe</option>
+            <option value="Rest of World">Rest of World</option>
+        </select>
+    </div>
+</div>
+
 <div id="map"></div>
 
+<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-    // 1. Prevent Map Duplication & Infinte World Wrap
+    // 1. Prevent Map Wrap & Infinity Stretching
     const corner1 = L.latLng(-60, -180);
     const corner2 = L.latLng(85, 180);
     const bounds = L.latLngBounds(corner1, corner2);
 
     const map = L.map('map', {
         maxBounds: bounds,
-        maxBoundsViscosity: 1.0, // Hard stop at map boundaries
+        maxBoundsViscosity: 1.0,
         minZoom: 2,
         maxZoom: 10
     }).setView([25.0, 15.0], 2);
 
-    // Clean Tile Layer with Tile Wrapping Disabled
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         noWrap: true,
         bounds: bounds,
         attribution: '&copy; American University of Beirut Alumni'
     }).addTo(map);
 
-    // 2. Official WAAAUB Chapters Data
+    // 2. Comprehensive WAAAUB Chapters Data Structure
     const chapters = [
         // MENA Region
-        { region: "MENA", country: "UAE", name: "Dubai & Northern Emirates Chapter", lat: 25.2048, lng: 55.2708, pres: "Roula Harb", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527", email: "dubaichapter@waaaub.org" },
-        { region: "MENA", country: "UAE", name: "Abu Dhabi Chapter", lat: 24.4539, lng: 54.3773, pres: "Suha Eid Takieddine", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527", email: "abudhabichapter@waaaub.org" },
-        { region: "MENA", country: "Jordan", name: "Club of Jordan Chapter", lat: 31.9454, lng: 35.9284, pres: "Haya Imam", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527", email: "jordanchapter@waaaub.org" },
-        { region: "MENA", country: "Bahrain", name: "Bahrain Chapter", lat: 26.0667, lng: 50.5577, pres: "Ashraf Obeid", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527", email: "bahrainchapter@waaaub.org" },
-        { region: "MENA", country: "Lebanon", name: "Central WAAAUB Campus Hub", lat: 33.8987, lng: 35.4800, pres: "WAAAUB Council", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408", email: "alumni@aub.edu.lb" },
+        { 
+            region: "MENA", 
+            country: "Lebanon", 
+            name: "Main Campus / Central WAAAUB", 
+            lat: 33.8987, lng: 35.4800, 
+            rep: "WAAAUB Board & Council", 
+            email: "alumni@aub.edu.lb", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/aubalumni", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
+        },
+        { 
+            region: "MENA", 
+            country: "UAE", 
+            name: "Dubai & Northern Emirates Chapter", 
+            lat: 25.2048, lng: 55.2708, 
+            rep: "Roula Harb (President)", 
+            email: "dubaichapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubdubai", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
+        },
+        { 
+            region: "MENA", 
+            country: "UAE", 
+            name: "Abu Dhabi Chapter", 
+            lat: 24.4539, lng: 54.3773, 
+            rep: "Suha Eid Takieddine (President)", 
+            email: "abudhabichapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/WAAAUB.AbuDhabi", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
+        },
+        { 
+            region: "MENA", 
+            country: "Jordan", 
+            name: "Club of Jordan Chapter", 
+            lat: 31.9454, lng: 35.9284, 
+            rep: "Haya Imam (President)", 
+            email: "jordanchapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/waaaubjordan", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
+        },
+        { 
+            region: "MENA", 
+            country: "Qatar", 
+            name: "Qatar Chapter", 
+            lat: 25.2854, lng: 51.5310, 
+            rep: "Chapter Executive Committee", 
+            email: "qatarchapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubqatar", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
+        },
 
         // Europe Region
-        { region: "Europe", country: "United Kingdom", name: "UK Chapter (London)", lat: 51.5074, lng: -0.1278, pres: "Chapter Executive Board", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408", email: "ukchapter@waaaub.org" },
-        { region: "Europe", country: "Greece", name: "Greece Chapter", lat: 37.9838, lng: 23.7275, pres: "Chapter Executive Board", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408", email: "greecechapter@waaaub.org" },
+        { 
+            region: "Europe", 
+            country: "United Kingdom", 
+            name: "UK Chapter (London)", 
+            lat: 51.5074, lng: -0.1278, 
+            rep: "Executive Leadership Board", 
+            email: "ukchapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubuk", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
+        },
+        { 
+            region: "Europe", 
+            country: "Greece", 
+            name: "Greece Chapter", 
+            lat: 37.9838, lng: 23.7275, 
+            rep: "Chapter Executive Board", 
+            email: "greecechapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/waaaubgreece", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
+        },
+        { 
+            region: "Europe", 
+            country: "Cyprus", 
+            name: "AUB Mediterraneo (Paphos)", 
+            lat: 34.7754, lng: 32.4245, 
+            rep: "AUB Mediterraneo Alumni Liaison", 
+            email: "alumni@aubmediterraneo.cy", 
+            insta: "https://www.instagram.com/aubmediterraneo", 
+            fb: "https://www.facebook.com/aubmediterraneo", 
+            portal: "https://www.aubmediterraneo.cy" 
+        },
 
         // North America Region
-        { region: "North America", country: "USA", name: "New York Tri-State Chapter", lat: 40.7128, lng: -74.0060, pres: "Chapter Leadership", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526", email: "nytristatechapter@waaaub.org" },
-        { region: "North America", country: "USA", name: "Greater Washington DC Chapter", lat: 38.9072, lng: -77.0369, pres: "Chapter Leadership", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526", email: "dcchapter@waaaub.org" },
-        { region: "North America", country: "Canada", name: "Toronto Chapter", lat: 43.6532, lng: -79.3832, pres: "Chapter Leadership", aubUrl: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526", email: "torontochapter@waaaub.org" }
+        { 
+            region: "North America", 
+            country: "USA", 
+            name: "New York Tri-State Chapter", 
+            lat: 40.7128, lng: -74.0060, 
+            rep: "Chapter Executive Board", 
+            email: "nytristatechapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubnytristate", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
+        },
+        { 
+            region: "North America", 
+            country: "USA", 
+            name: "Greater Washington D.C. Chapter", 
+            lat: 38.9072, lng: -77.0369, 
+            rep: "Chapter Leadership", 
+            email: "dcchapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubdc", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
+        },
+        { 
+            region: "North America", 
+            country: "Canada", 
+            name: "Toronto Chapter", 
+            lat: 43.6532, lng: -79.3832, 
+            rep: "Chapter Leadership", 
+            email: "torontochapter@waaaub.org", 
+            insta: "https://www.instagram.com/aub_alumni", 
+            fb: "https://www.facebook.com/groups/waaaubtoronto", 
+            portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
+        }
     ];
 
-    // 3. Render Interactive Pins with Direct AUB Links
-    chapters.forEach(c => {
-        const marker = L.marker([c.lat, c.lng]).addTo(map);
-        marker.bindPopup(`
-            <div class="aub-popup">
-                <h3>${c.name}</h3>
-                <p><strong>Region:</strong> ${c.region} (${c.country})</p>
-                ${c.pres ? `<p><strong>President:</strong> ${c.pres}</p>` : ''}
-                <p><strong>Contact:</strong> ${c.email}</p>
-                <a href="${c.aubUrl}" target="_blank" class="aub-btn">View Official AUB Directory Page</a>
-                <a href="mailto:${c.email}" class="aub-btn aub-btn-alt">Email Chapter Leadership</a>
-            </div>
-        `);
-    });
+    let activeMarkers = [];
+
+    // 3. Render Markers Function
+    function displayChapters(filterRegion) {
+        // Clear old markers
+        activeMarkers.forEach(m => map.removeLayer(m));
+        activeMarkers = [];
+
+        chapters.forEach(c => {
+            if (filterRegion === "ALL" || c.region === filterRegion) {
+                const marker = L.marker([c.lat, c.lng]).addTo(map);
+                
+                marker.bindPopup(`
+                    <div class="aub-popup">
+                        <h3>${c.name}</h3>
+                        <p><strong>Country:</strong> ${c.country} (${c.region})</p>
+                        <div class="rep-info">
+                            <p><strong><i class="fa-solid fa-user-tie"></i> Representative:</strong> ${c.rep}</p>
+                            <p><strong><i class="fa-solid fa-envelope"></i> Contact:</strong> ${c.email}</p>
+                        </div>
+                        <div class="social-links">
+                            <a href="${c.insta}" target="_blank" class="social-btn btn-insta" title="Instagram Page"><i class="fa-brands fa-instagram"></i> Insta</a>
+                            <a href="${c.fb}" target="_blank" class="social-btn btn-fb" title="Facebook Group"><i class="fa-brands fa-facebook"></i> FB</a>
+                            <a href="${c.portal}" target="_blank" class="social-btn btn-portal" title="Official Directory"><i class="fa-solid fa-globe"></i> Directory</a>
+                        </div>
+                    </div>
+                `);
+
+                activeMarkers.push(marker);
+            }
+        });
+    }
+
+    // Initial Load
+    displayChapters("ALL");
+
+    // Filter Handler
+    function filterChapters() {
+        const selectedRegion = document.getElementById("regionFilter").value;
+        displayChapters(selectedRegion);
+    }
 </script>
 
 </body>
