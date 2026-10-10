@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAAAUB Global Chapters Map | AUB Alumni</title>
+    <title>WAAAUB Global Chapters Map | AUB Alumni Connect</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,31 +12,32 @@
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f4; }
+        html, body { height: 100%; width: 100%; overflow: hidden; font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #aad3df; }
 
-        /* Top Header & Filter Bar */
+        /* Top Header Bar with Logo */
         #header-bar {
-            background-color: #800000; /* AUB Crimson Red */
-            color: white;
-            padding: 12px 20px;
+            background-color: #ffffff;
+            color: #333;
+            padding: 8px 20px;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border-bottom: 3px solid #800000; /* AUB Crimson */
             z-index: 1000;
             position: relative;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
 
-        .title-container h1 { font-size: 18px; font-weight: bold; margin-bottom: 2px; }
-        .title-container p { font-size: 12px; opacity: 0.9; }
+        .logo-container { display: flex; align-items: center; gap: 12px; }
+        .logo-container img { height: 48px; width: auto; object-fit: contain; }
 
-        .filter-container { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-        .filter-container label { font-size: 13px; font-weight: bold; }
+        .filter-container { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+        .filter-container label { font-size: 13px; font-weight: bold; color: #800000; }
         .filter-container select {
             padding: 6px 12px;
             border-radius: 4px;
-            border: none;
+            border: 1px solid #800000;
             font-size: 13px;
             font-weight: bold;
             color: #800000;
@@ -44,23 +45,27 @@
             background-color: #fff;
         }
 
-        #map { width: 100vw; height: calc(100vh - 60px); }
+        /* Map Canvas */
+        #map { width: 100vw; height: calc(100vh - 66px); background-color: #aad3df; }
 
-        /* Popup Styling */
-        .aub-popup { padding: 4px; max-width: 260px; }
+        /* Remove Ukrainian/Default Flag in Leaflet Footer */
+        .leaflet-attribution-flag { display: none !important; }
+
+        /* Custom Popup Styling */
+        .aub-popup { padding: 4px; max-width: 270px; }
         .aub-popup h3 { color: #800000; font-size: 15px; margin-bottom: 6px; border-bottom: 2px solid #800000; padding-bottom: 4px; }
         .aub-popup p { font-size: 12px; color: #333; margin: 3px 0; }
         .rep-info { background: #f8f9fa; border-left: 3px solid #800000; padding: 6px 8px; margin: 8px 0; border-radius: 2px; }
 
         /* Social Icons Bar */
-        .social-links { display: flex; gap: 8px; margin-top: 10px; }
+        .social-links { display: flex; gap: 6px; margin-top: 10px; }
         .social-btn {
             flex: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            padding: 7px 10px;
+            gap: 4px;
+            padding: 7px 8px;
             color: white !important;
             text-decoration: none;
             border-radius: 4px;
@@ -74,20 +79,19 @@
 </head>
 <body>
 
-<!-- Header Bar with Stats & Region Filter -->
+<!-- Header Bar with Official Logo & Region Filter -->
 <div id="header-bar">
-    <div class="title-container">
-        <h1>WAAAUB Global Chapters Map 🌍</h1>
-        <p>Connecting 60+ Alumni Chapters Worldwide across 4 Regions</p>
+    <div class="logo-container">
+        <!-- Logo Image -->
+        <img src="https://raw.githubusercontent.com/aub-alumni-connect/assets/main/aub_alumni_logo.jpg" alt="AUB Alumni Connect Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/en/2/29/American_University_of_Beirut_seal.png';">
     </div>
     <div class="filter-container">
         <label for="regionFilter"><i class="fa-solid fa-filter"></i> Filter Region:</label>
         <select id="regionFilter" onchange="filterChapters()">
-            <option value="ALL">Show All Regions (60+ Chapters)</option>
+            <option value="ALL">All Global Regions (60+ Chapters)</option>
             <option value="MENA">Middle East & North Africa (MENA)</option>
             <option value="North America">North America</option>
             <option value="Europe">Europe</option>
-            <option value="Rest of World">Rest of World</option>
         </select>
     </div>
 </div>
@@ -98,25 +102,29 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    // 1. Prevent Map Wrap & Infinity Stretching
-    const corner1 = L.latLng(-60, -180);
-    const corner2 = L.latLng(85, 180);
-    const bounds = L.latLngBounds(corner1, corner2);
+    // 1. Strict Bounds & Zoom Controls to Prevent Gray Edges
+    const southWest = L.latLng(-60, -180);
+    const northEast = L.latLng(85, 180);
+    const bounds = L.latLngBounds(southWest, northEast);
 
     const map = L.map('map', {
         maxBounds: bounds,
-        maxBoundsViscosity: 1.0,
-        minZoom: 2,
-        maxZoom: 10
-    }).setView([25.0, 15.0], 2);
+        maxBoundsViscosity: 1.0, // Prevents dragging beyond world map boundaries
+        minZoom: 2.5,
+        maxZoom: 10,
+        worldCopyJump: false
+    }).setView([25.0, 15.0], 2.5);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // 2. English-First Carto Tile Layer (Clean & Full Screen)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         noWrap: true,
         bounds: bounds,
-        attribution: '&copy; American University of Beirut Alumni'
+        subdomains: 'abcd',
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://alumni.aub.edu.lb">American University of Beirut</a>'
     }).addTo(map);
 
-    // 2. Comprehensive WAAAUB Chapters Data Structure
+    // 3. Official WAAAUB Chapters Dataset
     const chapters = [
         // MENA Region
         { 
@@ -124,10 +132,10 @@
             country: "Lebanon", 
             name: "Main Campus / Central WAAAUB", 
             lat: 33.8987, lng: 35.4800, 
-            rep: "WAAAUB Board & Council", 
+            rep: "WAAAUB Council & Relations Office", 
             email: "alumni@aub.edu.lb", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/aubalumni", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
         },
         { 
@@ -138,7 +146,7 @@
             rep: "Roula Harb (President)", 
             email: "dubaichapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubdubai", 
+            fb: "https://www.facebook.com/groups/2257287158/", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
         },
         { 
@@ -149,7 +157,7 @@
             rep: "Suha Eid Takieddine (President)", 
             email: "abudhabichapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/WAAAUB.AbuDhabi", 
+            fb: "https://www.facebook.com/aub.alumni/", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
         },
         { 
@@ -160,18 +168,18 @@
             rep: "Haya Imam (President)", 
             email: "jordanchapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/waaaubjordan", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial/", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
         },
         { 
             region: "MENA", 
-            country: "Qatar", 
-            name: "Qatar Chapter", 
-            lat: 25.2854, lng: 51.5310, 
-            rep: "Chapter Executive Committee", 
-            email: "qatarchapter@waaaub.org", 
+            country: "Bahrain", 
+            name: "Bahrain Chapter", 
+            lat: 26.0667, lng: 50.5577, 
+            rep: "Ashraf Obeid (President)", 
+            email: "bahrainchapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubqatar", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=527" 
         },
 
@@ -184,7 +192,7 @@
             rep: "Executive Leadership Board", 
             email: "ukchapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubuk", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial/", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
         },
         { 
@@ -195,15 +203,15 @@
             rep: "Chapter Executive Board", 
             email: "greecechapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/waaaubgreece", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=408" 
         },
         { 
             region: "Europe", 
             country: "Cyprus", 
-            name: "AUB Mediterraneo (Paphos)", 
+            name: "AUB Mediterraneo Campus", 
             lat: 34.7754, lng: 32.4245, 
-            rep: "AUB Mediterraneo Alumni Liaison", 
+            rep: "AUB Mediterraneo Administration", 
             email: "alumni@aubmediterraneo.cy", 
             insta: "https://www.instagram.com/aubmediterraneo", 
             fb: "https://www.facebook.com/aubmediterraneo", 
@@ -216,10 +224,10 @@
             country: "USA", 
             name: "New York Tri-State Chapter", 
             lat: 40.7128, lng: -74.0060, 
-            rep: "Chapter Executive Board", 
+            rep: "Chapter Leadership Board", 
             email: "nytristatechapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubnytristate", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
         },
         { 
@@ -230,7 +238,7 @@
             rep: "Chapter Leadership", 
             email: "dcchapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubdc", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
         },
         { 
@@ -238,19 +246,19 @@
             country: "Canada", 
             name: "Toronto Chapter", 
             lat: 43.6532, lng: -79.3832, 
-            rep: "Chapter Leadership", 
+            rep: "Chapter Executive Board", 
             email: "torontochapter@waaaub.org", 
             insta: "https://www.instagram.com/aub_alumni", 
-            fb: "https://www.facebook.com/groups/waaaubtoronto", 
+            fb: "https://www.facebook.com/AUBAlumniOfficial", 
             portal: "https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=526" 
         }
     ];
 
     let activeMarkers = [];
 
-    // 3. Render Markers Function
+    // 4. Render Markers Function
     function displayChapters(filterRegion) {
-        // Clear old markers
+        // Clear existing markers
         activeMarkers.forEach(m => map.removeLayer(m));
         activeMarkers = [];
 
@@ -263,12 +271,12 @@
                         <h3>${c.name}</h3>
                         <p><strong>Country:</strong> ${c.country} (${c.region})</p>
                         <div class="rep-info">
-                            <p><strong><i class="fa-solid fa-user-tie"></i> Representative:</strong> ${c.rep}</p>
-                            <p><strong><i class="fa-solid fa-envelope"></i> Contact:</strong> ${c.email}</p>
+                            <p><strong><i class="fa-solid fa-user-tie"></i> Leadership:</strong> ${c.rep}</p>
+                            <p><strong><i class="fa-solid fa-envelope"></i> Email:</strong> ${c.email}</p>
                         </div>
                         <div class="social-links">
-                            <a href="${c.insta}" target="_blank" class="social-btn btn-insta" title="Instagram Page"><i class="fa-brands fa-instagram"></i> Insta</a>
-                            <a href="${c.fb}" target="_blank" class="social-btn btn-fb" title="Facebook Group"><i class="fa-brands fa-facebook"></i> FB</a>
+                            <a href="${c.insta}" target="_blank" class="social-btn btn-insta" title="Instagram"><i class="fa-brands fa-instagram"></i> Insta</a>
+                            <a href="${c.fb}" target="_blank" class="social-btn btn-fb" title="Facebook Group"><i class="fa-brands fa-facebook"></i> Facebook</a>
                             <a href="${c.portal}" target="_blank" class="social-btn btn-portal" title="Official Directory"><i class="fa-solid fa-globe"></i> Directory</a>
                         </div>
                     </div>
@@ -282,7 +290,7 @@
     // Initial Load
     displayChapters("ALL");
 
-    // Filter Handler
+    // Filter Trigger
     function filterChapters() {
         const selectedRegion = document.getElementById("regionFilter").value;
         displayChapters(selectedRegion);
