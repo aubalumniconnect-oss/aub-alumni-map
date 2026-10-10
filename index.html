@@ -1,1 +1,151 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>WAAAUB Chapters – Global Alumni Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.9/topojson.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.world.min.js"></script>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--mut:#666;--card:#f4f1ec;--bd:#ddd;--land:#dcd6c8;--sea:#eaf1f6;--hl:#ecc9d3;--acc:#840132;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--fg:#eee;--mut:#9aa;--card:#202328;--bd:#33373d;--land:#454a52;--sea:#1b2530;--hl:#5c2a3a;--acc:#ff7b9c}}
+:root[data-theme="dark"]{--bg:#15171a;--fg:#eee;--mut:#9aa;--card:#202328;--bd:#33373d;--land:#454a52;--sea:#1b2530;--hl:#5c2a3a;--acc:#ff7b9c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box}
+header{padding:18px 16px 6px;max-width:1200px;margin:auto}
+h1{margin:0;font-size:22px;color:var(--acc)}header p{margin:4px 0 0;color:var(--mut)}
+.wrap{max-width:1200px;margin:auto;padding:8px 16px 24px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+input{flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--fg);font:inherit}
+button,.btn{border:1px solid var(--bd);background:var(--card);color:var(--fg);border-radius:8px;padding:8px 12px;font:inherit;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.mapbox{position:relative;background:var(--sea);border:1px solid var(--bd);border-radius:12px;overflow:hidden;touch-action:none}
+svg{display:block;width:100%;height:auto;cursor:grab}
+.m{stroke:#fff;stroke-width:1.5;cursor:pointer}.m:hover,.m.sel{stroke:var(--fg);stroke-width:2.5}
+.lb{fill:var(--fg);paint-order:stroke;stroke:var(--sea);stroke-width:2.2px;font-weight:600;pointer-events:none;font-family:system-ui,sans-serif}.reg{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.reg button.on{background:var(--acc);color:#fff;border-color:var(--acc)}.cty{fill:var(--land);stroke:var(--bg);stroke-width:.6px;vector-effect:non-scaling-stroke}.cty.hl{fill:var(--hl)}.cty:hover{opacity:.8}.cl{fill:var(--mut);font-family:system-ui,sans-serif;pointer-events:none}.zb{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px}.zb button{width:34px;padding:6px 0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mut);margin:8px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:10px 0}
+.card h2{margin:0 0 2px;font-size:18px}.card .s{color:var(--mut);font-size:13px;margin-bottom:10px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.list button{text-align:left}.list small{display:block;color:var(--mut)}
+.note{font-size:12.5px;color:var(--mut);margin-top:14px}
+</style></head><body>
+<header><h1>🌍 AUB Alumni Chapters Worldwide (WAAAUB)</h1><p>Click a pin to see the chapter's email, Instagram and Facebook, and reach out to join.</p></header>
+<div class="wrap">
+<div class="bar"><input id="q" placeholder="Search city, country or chapter…" aria-label="Search"></div>
+<div class="reg" id="reg"></div><div class="legend"><span><i style="background:var(--hl);border:1px solid var(--bd)"></i>Country with a chapter</span><span><i style="background:#c0392b"></i>Middle East &amp; N. Africa</span><span><i style="background:#2471a3"></i>Europe</span><span><i style="background:#1e8449"></i>North America</span><span><i style="background:#b9770e"></i>Lebanon / Professional</span></div>
+<div class="mapbox"><svg id="map" viewBox="0 0 1200 614"></svg><div class="zb"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">−</button><button id="zr" aria-label="Reset">⟲</button></div></div>
+<div class="card" id="det"><h2>Select a chapter</h2><div class="s">Tap any pin on the map or a chapter below.</div></div>
+<div class="list" id="list"></div>
+<p class="note">Data compiled from AUB's official alumni directory (alumni.aub.edu.lb) and chapters' public pages. Representatives and emails come from AUB's alumni directory (alumni.aub.edu.lb); where none is shown, the directory page lists none publicly. Names reflect the page at the time of research and change with elections. Chapter Instagram handles are not published there, so the official <b>@aubalumniofficial</b> account is linked. Country borders: Natural Earth via Datamaps (low-resolution; a few micro-states are too small to draw). Always confirm details with <a href="mailto:alumni@aub.edu.lb" style="color:var(--acc)">alumni@aub.edu.lb</a>.</p>
+</div>
+<script>
+var IG="https://www.instagram.com/aubalumniofficial/",D="https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=";
+var C={m:"#c0392b",e:"#2471a3",n:"#1e8449",l:"#b9770e"};
+function w(s){return s+"@waaaub.org"}
+var K=[
+["Abu Dhabi","UAE",24.45,54.38,"m",w("abudhabichapter"),0,0,D+527,"Facebook group listed on directory"],
+["Bahrain","Bahrain",26.07,50.56,"m",w("bahrainchapter"),0,0,D+527,"Facebook group listed on directory"],
+["Club of Jordan","Jordan",31.95,35.93,"m",w("jordanchapter"),0,0,D+527,"Facebook group listed on directory"],
+["Dubai & Northern Emirates","UAE",25.2,55.27,"m",w("dubaichapter"),0,0,D+527],
+["Eastern Province","Saudi Arabia",26.43,50.1,"m",w("easternprovincechapter"),0,0,D+527],
+["Jeddah","Saudi Arabia",21.54,39.17,"m",w("jeddahchapter"),0,0,D+527],
+["Kuwait","Kuwait",29.37,47.98,"m",w("kuwaitchapter"),0,0,D+527,"Facebook group listed on directory"],
+["Oman","Oman",23.59,58.41,"m",w("omanchapter"),0,0,D+527],
+["Palestine","Palestine",31.9,35.2,"m",w("palestinechapter"),0,0,D+527],
+["Qatar","Qatar",25.29,51.53,"m",w("qatarchapter"),0,0,D+527,"Has its own Instagram &amp; LinkedIn, linked on the directory page"],
+["Riyadh","Saudi Arabia",24.71,46.68,"m","Waaaub.riyadhchapter@gmail.com",0,0,D+527,"Facebook group listed on directory"],
+["Syria","Syria",33.51,36.29,"m",w("syriachapter"),0,0,D+527],
+["Cyprus","Cyprus",35.17,33.36,"e",w("cypruschapter"),0,0,D+412],
+["Germany","Germany",52.52,13.4,"e",w("germanychapter"),0,0,D+412],
+["Greece","Greece",37.98,23.73,"e",w("greecechapter"),0,0,D+412],
+["Paris","France",48.86,2.35,"e",w("parischapter"),0,0,D+412],
+["Poland","Poland",52.23,21.01,"e",w("polandchapter"),0,0,D+412],
+["Spain","Spain",40.42,-3.7,"e",w("spainchapter"),0,0,D+412],
+["Switzerland","Switzerland",46.95,7.45,"e","aubswitzerland@gmail.com",0,0,D+412],
+["Turkey","Turkey",41.01,28.98,"e",w("turkeychapter"),0,0,D+412],
+["United Kingdom","UK",51.51,-0.13,"e",w("ukchapter"),0,0,D+412,"Also on X: <a href='https://x.com/WAAAUB_UK' target='_blank' rel='noopener'>@WAAAUB_UK</a>"],
+["New England","USA",42.36,-71.06,"n","waaaub.nec@gmail.com","https://www.facebook.com/waaaubnewengland/",0,0],
+["Los Angeles","USA",34.05,-118.24,"n","aubalumnilachapter@gmail.com","https://www.facebook.com/aubalumnilosangeles/",0,0],
+["Philadelphia–Delaware Valley","USA",39.95,-75.17,"n",0,"https://www.facebook.com/WAAAUBPHILLY/",0,"https://alumni.aub.edu.lb/s/1716/index.aspx?sid=1716&gid=2&pgid=589"],
+["Toronto","Canada",43.65,-79.38,"n",0,0,0,"https://alumni.aub.edu.lb/?pgid=593&gid=2&cid=10018","Chapter committee contacts on directory page"],
+["Greater Washington, DC","USA",38.9,-77.04,"n","dcchapter@waaaub.org",0,0,"https://alumni.aub.edu.lb/s/1716/index.aspx?sid=1716&gid=2&pgid=408","Contact via “Chapters Near You” map"],
+["New York Metropolitan","USA",40.71,-74.0,"n",0,0,0,"https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=583"],
+["Houston","USA",29.76,-95.37,"n",0,0,0,"https://alumni.aub.edu.lb/s/1716/bp20/Interior.aspx?sid=1716&gid=2&pgid=596"],
+["Midwest","USA",41.88,-87.63,"n",0,0,0,"https://alumni.aub.edu.lb/s/1716/index.aspx?sid=1716&gid=2&pgid=408","Leadership shown inconsistently on AUB's site; confirm via the directory"],
+["AUB Alumni Relations (Beirut HQ)","Lebanon",33.9,35.48,"l","alumni@aub.edu.lb",0,0,"https://alumni.aub.edu.lb/s/1716/index.aspx?sid=1716&gid=2&pgid=408","Lebanon chapters incl. 10 professional chapters"],
+["FAFS Professional Chapter","Lebanon",33.88,35.5,"l","FAFSchapter@waaaub.org","https://www.facebook.com/FAFSAlumniChapterWAAAUB/",0,0,"Agricultural &amp; Food Sciences alumni"]
+];
+var R={"Bahrain":"President Ashraf Obeid (BEN ’85) · VP Hadeel Al Kadi (BA ’98) · Secretary Khalid Modara (BA ’18)",
+"Club of Jordan":"President Haya Imam (BBA ’99) · VP Mish’al Abu Shkeidem (BBA ’04) · Treasurer Ghassoub Kawar · Secretary Dana Bashiti",
+"Eastern Province":"President Marwan Gholmieh (BA ’69) · VP Marwan Frem (BEN ’04) · Treasurer Dimitri Nasra (BA ’85)",
+"Kuwait":"President Samer Al Rayyes (BS ’81, MD ’85) · VP Mohamad Zeitoun (BA ’87) · Treasurer Yasmine Fakih · Secretary Fatima Kamali",
+"Oman":"President Bilal Raad (BArch ’91) · VP Maya Ibrahim Hammoud (BS ’96) · Treasurer Marwan Ashkar · Secretary Philippe Georgiou",
+"Palestine":"President Marwan Durzi (BA ’97) · VP Simon Kuttab (BS ’68) · Treasurer Giselle Toubassi · Secretary Mira Abu Shusheh",
+"Qatar":"President Fadia Fakih (BA ’95) · VP Ayman Makarem (BEN ’09) · Treasurer Rania Abou Ghaida · Secretary Robert Sawaya",
+"Riyadh":"President Yehya El Oueini (BBA ’10) · VP Karin Araman (BEN ’10) · Treasurer Akram Al Chammaa · Honorary President Abdallah Darwiche",
+"Cyprus":"President Eliza Markidou Ioannidou (BA ’84) · VP Andriana Christoforou Achilleos (BS ’83) · Secretary Ward Wehbeh Christofi",
+"Greece":"President Zuhair Haddad · VPs Christos Folios, Rita Salloum · Treasurer Maha Harb · Secretary Sofie Chahda",
+"Poland":"President Nassim Njeim (BS ’12) · VP Marc Khoueiry (BS ’22) · Treasurer Georges Moukhaiber · Secretary Mabelle Chedid",
+"Spain":"President Rami Assaf (BS ’05) · VP Maher El Sayed (BEN ’04) · Treasurer Mariane Maasri · Secretary Tania Ghandour",
+"Turkey":"President Samer Sinno (BEN ’92) · VP Alaa Kabalan (BFA ’09) · Treasurer Chirine El Baba · Secretary Tarek Hassan",
+"United Kingdom":"President Christina Bilalian (BS ’06) · Treasurer David Abdo (BA ’85) · Secretary Christina Theokaris (BEN ’13)",
+"Toronto":"President Nadine Ammache (BA ’89) · VP Ezzat Jaroudi (MSE ’06) · Treasurer Nahed Daaboul Ghalayini · Secretary Ayman Jalloul",
+"New York Metropolitan":"President Ara Tekian (BS ’75) · VP Sara Kaddoura (BS ’15) · Treasurer Rami Kantar · Secretary Leon Istambouli",
+"Houston":"President Tania Shaheen (BS ’94) · VP Osama Mawlawi (BE ’88) · Treasurer Hatem Alrais · Secretary Maya El Hariri"};
+var S=1200/(2*Math.PI),TY=S*Math.log(Math.tan(Math.PI/4+75*Math.PI/360));function X(o){return(o+180)/360*1200}function Y(a){return TY-S*Math.log(Math.tan(Math.PI/4+a*Math.PI/360))}
+var G=["-168,66 -162,70 -156,71 -141,70 -128,70 -115,68 -95,72 -85,69 -82,63 -93,59 -94,57 -85,55 -80,52 -78,58 -72,61 -65,60 -62,56 -56,52 -60,47 -66,44 -70,43 -74,40 -76,35 -81,31 -80,26 -83,29 -90,30 -97,27 -97,22 -94,18 -91,19 -90,21 -87,21 -88,16 -84,15 -83,10 -79,9 -77,8 -80,7 -86,11 -92,14 -105,20 -112,29 -117,32 -121,35 -124,40 -124,48 -130,54 -140,60 -150,60 -158,57 -165,60",
+"-73,78 -60,82 -30,83 -20,80 -20,72 -30,68 -43,60 -50,64 -55,70 -68,76",
+"-77,8 -72,12 -62,10 -52,5 -50,0 -44,-2 -35,-5 -39,-14 -41,-22 -48,-26 -53,-34 -58,-38 -62,-40 -65,-47 -68,-53 -72,-52 -74,-45 -73,-37 -71,-30 -70,-18 -76,-14 -81,-6 -80,-1 -77,3",
+"-17,21 -13,28 -9,32 -6,36 10,37 11,33 20,31 25,32 32,31 34,28 38,20 43,12 51,12 46,5 40,-3 39,-10 40,-16 35,-24 33,-28 27,-34 20,-35 17,-30 12,-17 13,-8 9,-1 9,4 4,6 -4,5 -8,4 -13,8 -17,14",
+"-9,37 -9,43 -1,46 -4,48 2,51 8,54 9,57 11,54 14,54 21,55 24,59 30,60 34,66 40,67 44,68 60,69 70,73 80,73 100,77 113,74 130,71 140,72 160,70 170,70 180,68 180,65 173,62 163,60 160,54 156,51 155,59 143,59 135,55 141,52 140,48 135,43 130,42 129,35 126,35 126,38 122,40 121,37 119,35 122,30 120,24 110,21 108,21 106,18 109,12 105,9 101,13 100,8 103,1 100,4 98,10 98,16 94,17 91,22 87,21 80,15 78,8 73,16 72,21 67,24 62,25 57,26 56,27 52,28 48,30 50,26 56,24 59,22 53,16 44,13 43,16 38,24 35,28 34,31 36,36 27,37 26,40 23,40 24,38 20,40 19,42 13,45 12,44 18,40 16,38 12,42 9,44 3,43 0,39 -2,37 -6,36",
+"5,59 5,62 14,68 20,70 28,71 30,70 25,65 22,64 21,61 17,57 13,55 11,59",
+"-5,50 1,51 2,53 -1,56 -3,58 -6,58 -5,55 -3,54 -5,52","-10,52 -6,52 -6,55 -10,54",
+"114,-22 122,-18 130,-12 136,-12 137,-16 142,-11 146,-19 153,-26 150,-37 145,-39 140,-38 135,-34 129,-32 115,-34",
+"95,5 98,4 106,-6 104,-6 95,2","109,2 117,7 119,1 116,-4 110,-3","131,-1 141,-3 150,-10 141,-9 135,-4",
+"130,32 136,34 141,38 142,42 140,41 136,36","44,-25 47,-25 50,-15 49,-12 44,-17","172,-34 178,-38 175,-41 172,-41","172,-41 174,-42 170,-46 167,-46",
+"-24,65 -14,66 -14,64 -22,63","-85,22 -74,20 -78,23","32.3,35 34.5,35.6 34,34.7 32.5,34.6"];
+var s="";
+for(var lo=-180;lo<=180;lo+=30)s+='<line x1="'+X(lo)+'" y1="0" x2="'+X(lo)+'" y2="614" stroke="var(--bd)" stroke-width=".5" opacity=".6"/>';
+for(var la=-45;la<=75;la+=30)s+='<line x1="0" y1="'+Y(la)+'" x2="1200" y2="'+Y(la)+'" stroke="var(--bd)" stroke-width=".5" opacity=".6"/>';
+var OV={USA:[-98,39],CAN:[-100,58],RUS:[95,61],FRA:[2.5,46.7],NOR:[9,61.5],CHL:[-71,-35],IDN:[115,-2],GRL:[-42,74]};
+var ok=false,CT=[];
+try{if(typeof Datamap!="undefined"){var hd=document.createElement("div");hd.style.cssText="position:absolute;left:-9999px;top:0;width:1200px;height:614px";document.body.appendChild(hd);
+new Datamap({element:hd,scope:"world",width:1200,height:614,fills:{defaultFill:"#ccc"},geographyConfig:{popupOnHover:false,highlightOnHover:false},setProjection:function(){var pr=d3.geo.mercator().scale(S).translate([600,TY]).precision(.1);return{path:d3.geo.path().projection(pr),projection:pr}}});
+hd.querySelectorAll("path.datamaps-subunit").forEach(function(p){var id=p.getAttribute("class").split(" ")[1],dt=d3.select(p).datum();if(id=="ATA")return;CT.push({id:id,n:(dt&&dt.properties&&dt.properties.name)||id,d:p.getAttribute("d")})});
+document.body.removeChild(hd);ok=CT.length>50}}catch(e){ok=false}
+var HL={ARE:1,BHR:1,JOR:1,SAU:1,KWT:1,OMN:1,QAT:1,SYR:1,CYP:1,DEU:1,GRC:1,FRA:1,POL:1,ESP:1,CHE:1,TUR:1,GBR:1,USA:1,CAN:1,LBN:1,PSE:1};
+if(ok)CT.forEach(function(c){s+='<path class="cty'+(HL[c.id]?' hl':'')+'" data-id="'+c.id+'" d="'+c.d+'"><title>'+c.n.replace(/&/g,"&amp;")+'</title></path>'});
+if(!ok)G.forEach(function(g){s+='<polygon fill="var(--land)" stroke="var(--bd)" stroke-width=".8" stroke-linejoin="round" points="'+g.split(" ").map(function(q){var t=q.split(",");return X(+t[0]).toFixed(1)+","+Y(+t[1]).toFixed(1)}).join(" ")+'"/>'});
+var P="",T="";K.forEach(function(k,i){T+='<text class="lb" data-i="'+i+'" x="'+X(k[3])+'" y="'+Y(k[2])+'" text-anchor="middle">'+k[0].replace(/&/g,'&amp;')+'</text>';P+='<circle class="m" data-i="'+i+'" cx="'+X(k[3])+'" cy="'+Y(k[2])+'" r="8" fill="'+C[k[4]]+'"><title>'+k[0]+'</title></circle>'});
+var svg=document.getElementById("map");svg.innerHTML='<g>'+s+'</g><g id="cls"></g><g id="pins">'+P+'</g><g id="lbs">'+T+'</g>';
+var CLs=[];
+if(ok){var cg=document.getElementById("cls");CT.forEach(function(c){var p=svg.querySelector('[data-id="'+c.id+'"]');if(!p)return;var b=p.getBBox(),o=OV[c.id],pos=o?[X(o[0]),Y(o[1])]:[b.x+b.width/2,b.y+b.height/2];var t=document.createElementNS("http://www.w3.org/2000/svg","text");t.setAttribute("class","cl");t.setAttribute("x",pos[0]);t.setAttribute("y",pos[1]);t.setAttribute("text-anchor","middle");t.textContent=c.n;t.style.display="none";cg.appendChild(t);CLs.push({t:t,w:o?b.width*.5:b.width,n:c.n.length})})}
+function updCl(){var f=9*vb[2]/(svg.getBoundingClientRect().width||1000);CLs.forEach(function(o){var sh=o.w>o.n*f*.62;o.t.style.display=sh?"":"none";if(sh)o.t.setAttribute("font-size",f)})}
+var vb=[0,0,1200,614];function sv(){svg.setAttribute("viewBox",vb.join(" "))}
+function zoom(f,cx,cy){var nw=Math.min(1200,Math.max(150,vb[2]/f)),nh=nw*614/1200;cx=cx==null?vb[0]+vb[2]/2:cx;cy=cy==null?vb[1]+vb[3]/2:cy;vb=[Math.max(0,Math.min(1200-nw,cx-(cx-vb[0])*nw/vb[2])),Math.max(0,Math.min(614-nh,cy-(cy-vb[1])*nh/vb[3])),nw,nh];sv();pinSize()}
+function pinSize(){var px=svg.getBoundingClientRect().width||1000,u=vb[2]/px,r=6*u;document.querySelectorAll(".m").forEach(function(c){c.setAttribute("r",r);c.style.strokeWidth=1.5*u});var fs=11*u;document.querySelectorAll(".lb").forEach(function(t){var i=+t.dataset.i;t.setAttribute("font-size",fs);t.setAttribute("y",Y(K[i][2])-r-fs*.3);t.style.strokeWidth=3*u+"px";t.style.display=vb[2]>650?"none":""});
+var seen=[];document.querySelectorAll(".lb").forEach(function(t){if(t.style.display=="none")return;var b=t.getBoundingClientRect();for(var j=0;j<seen.length;j++){var o=seen[j];if(b.left<o.right&&b.right>o.left&&b.top<o.bottom&&b.bottom>o.top){t.style.display="none";return}}seen.push(b)});updCl()}
+function pt(e){var b=svg.getBoundingClientRect();return[vb[0]+(e.clientX-b.left)/b.width*vb[2],vb[1]+(e.clientY-b.top)/b.height*vb[3]]}
+document.getElementById("zi").onclick=function(){zoom(1.6)};document.getElementById("zo").onclick=function(){zoom(1/1.6)};document.getElementById("zr").onclick=function(){vb=[0,0,1200,614];sv();pinSize()};
+svg.addEventListener("wheel",function(e){e.preventDefault();var p=pt(e);zoom(e.deltaY<0?1.25:.8,p[0],p[1])},{passive:false});
+var dr=null,moved=0;svg.addEventListener("pointerdown",function(e){dr=[e.clientX,e.clientY];moved=0});
+window.addEventListener("pointerup",function(){dr=null});
+window.addEventListener("pointermove",function(e){if(!dr)return;var b=svg.getBoundingClientRect(),dx=(e.clientX-dr[0])/b.width*vb[2],dy=(e.clientY-dr[1])/b.height*vb[3];if(Math.abs(e.clientX-dr[0])+Math.abs(e.clientY-dr[1])>3)moved=1;vb[0]=Math.max(0,Math.min(1200-vb[2],vb[0]-dx));vb[1]=Math.max(0,Math.min(614-vb[3],vb[1]-dy));dr=[e.clientX,e.clientY];sv()});
+function show(i){var k=K[i],h='<h2>'+k[0]+' Chapter</h2><div class="s">'+k[1]+'</div><div class="acts">';
+if(k[5])h+='<a class="btn p" href="mailto:'+k[5]+'?subject=Joining the '+encodeURIComponent(k[0])+' AUB alumni chapter">✉ '+k[5]+'</a>';
+h+='<a class="btn" target="_blank" rel="noopener" href="'+IG+'">📷 Instagram (official AUB Alumni)</a>';
+if(k[6])h+='<a class="btn" target="_blank" rel="noopener" href="'+k[6]+'">Facebook</a>';
+if(k[8])h+='<a class="btn" target="_blank" rel="noopener" href="'+k[8]+'">AUB directory page</a>';
+h+='</div>';if(R[k[0]])h+='<div style="margin-top:12px"><b>Chapter representatives</b><br>'+R[k[0]]+'</div>';if(k[9])h+='<div class="s" style="margin-top:10px">'+k[9]+'</div>';
+document.getElementById("det").innerHTML=h;document.querySelectorAll(".m").forEach(function(c){c.classList.toggle("sel",+c.dataset.i==i)});
+document.getElementById("det").scrollIntoView({block:"nearest",behavior:"smooth"})}
+document.getElementById("pins").addEventListener("click",function(e){if(!moved&&e.target.dataset.i!=null)show(+e.target.dataset.i)});
+function list(f){var h="";K.forEach(function(k,i){if(!f||(k[0]+" "+k[1]).toLowerCase().indexOf(f)>-1)h+='<button data-i="'+i+'">'+k[0]+'<small>'+k[1]+'</small></button>'});var el=document.getElementById("list");el.innerHTML=h||"<span class=s>No match</span>"}
+document.getElementById("list").addEventListener("click",function(e){var b=e.target.closest("button");if(b){var i=+b.dataset.i;show(i);vb=[Math.max(0,Math.min(1200-300,X(K[i][3])-150)),Math.max(0,Math.min(614-153.5,Y(K[i][2])-77)),300,153.5];sv();pinSize()}});
+document.getElementById("q").addEventListener("input",function(e){var f=e.target.value.trim().toLowerCase();list(f);document.querySelectorAll(".m").forEach(function(c){var k=K[+c.dataset.i];c.style.opacity=!f||(k[0]+" "+k[1]).toLowerCase().indexOf(f)>-1?1:.15})});
+list("");
+var RG={"🌍 World":[-180,85,180,-58],"Gulf & Levant":[31,37,60,19],"Gulf close-up":[46,30,58,22],"Europe":[-12,58,40,33],"North America":[-128,50,-66,26],"Lebanon":[34.8,34.3,36.4,33.2]};
+function go(n){var g=RG[n],w=Math.max(40,Math.min(1200,(g[2]-g[0])/360*1200)),h=w*614/1200,cx=X((g[0]+g[2])/2),cy=Y((g[1]+g[3])/2);vb=[Math.max(0,Math.min(1200-w,cx-w/2)),Math.max(0,Math.min(614-h,cy-h/2)),w,h];sv();pinSize();document.querySelectorAll("#reg button").forEach(function(b){b.classList.toggle("on",b.textContent==n)})}
+var rh="";Object.keys(RG).forEach(function(n){rh+="<button>"+n+"</button>"});document.getElementById("reg").innerHTML=rh;document.getElementById("reg").addEventListener("click",function(e){if(e.target.tagName=="BUTTON")go(e.target.textContent)});
+pinSize();window.addEventListener("resize",pinSize);
+</script></body></html>
 
